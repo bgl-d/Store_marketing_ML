@@ -53,7 +53,6 @@ def eda(df):
     ax0.spines[['top', 'right']].set_visible(False)
     ax0.set_title('Percentage of Positive Responses to the Campaign Over Time.', fontsize=13.5)
     ax0.set_ylabel('Percentage', fontsize=11)
-    # fig0.savefig('Previous campaign responses based on customer enrollment with the company.png')
 
     # previous campaign responses based on customer features
     customer_features = ['Education', 'Marital_Status', 'Kidhome', 'Teenhome']
@@ -64,7 +63,6 @@ def eda(df):
                       stat='count').set_title(customer_features[i])
         ax1.set(xlabel='')
     fig1.tight_layout()
-    # fig1.savefig('Previous campaign responses based on customer features.png')
 
     # previous campaign responses based on customer engagement
     engagement_features = ['NumDealsPurchases', 'NumWebPurchases', 'NumCatalogPurchases',
@@ -75,7 +73,6 @@ def eda(df):
         sns.countplot(data=df, x=engagement_features[i], hue='Response', ax=ax2).set_title(engagement_features[i])
         ax2.set(xlabel='')
     fig2.tight_layout()
-    # fig2.savefig('Previous campaign responses based on customer engagement.png')
 
     # previous campaign conversion rate
     rate = df['Response'].sum() * 100 / df.shape[0]
@@ -103,7 +100,6 @@ def preprocessing(df):
     corr_m = df.corr()
     sns.heatmap(corr_m, cmap="YlGnBu", annot=True, annot_kws={"size": 8}, ax=ax3)
     ax3.set_xticklabels(x_labels, rotation=30, ha='right')
-    # plt.show()
     return df
 
 
@@ -125,7 +121,7 @@ def logit_model(df):
     predictions = (predict_l[:] > 0.5).astype(int)
 
     # model's summary
-    # print(m_logit.summary())
+    print(m_logit.summary())
     print(metrics.classification_report(y_test, predictions, target_names=['reject', 'accept']))
 
     # confusion matrix
@@ -149,7 +145,7 @@ def logit_model(df):
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.legend(loc=4)
-    print(auc)
+    print('Logit AUC: 'auc)
 
     # vif
     vif_data = pd.DataFrame()
@@ -192,7 +188,7 @@ def random_forest(df):
     print(cnf_matrix)
 
     auc = metrics.roc_auc_score(y_test, y_pred)
-    print(auc)
+    print('RF AUC: ',auc)
 
 
 if __name__ == '__main__':
