@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 import seaborn as sns
 import statsmodels.api as sm
 from sklearn import metrics
+from sklearn.metrics import classification_report
 
 
 def preprocessing(df):
@@ -56,8 +57,7 @@ def eda(df):
     fig3.tight_layout()
 
     # save pictures
-    fig2.savefig('heatmap.png')
-    # plt.show()
+    # fig2.savefig('heatmap.png')
 
     # previous campaign conversion rate
     rate = df['Response'].sum() * 100 / df.shape[0]
@@ -82,28 +82,29 @@ def model_building(df):
     y = df[['Response']]
     X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=0, train_size=.8)
 
-    # logit
+    # logit model
     m_logit = sm.Logit(y_train, X_train).fit()
     predict_l = m_logit.predict(X_test)
-
-    # probit
-    m_probit = sm.Probit(y_train, X_train).fit()
-    predict_p = m_probit.predict(X_test)
-    predict_p = (predict_p[:, 1] > 0.5).astype(int)
-    print(predict_p)
+    predict_l = (predict_l[:] > 0.5).astype(int)
 
     # model's summary
     print(m_logit.summary())
-    print(m_probit.summary())
+    # print(classification_report(y_test, predict_l))
 
-    # # confusion matrix
-    # cnf_matrix_l = metrics.confusion_matrix(y_test, predict_l)
-    # cnf_matrix_p = metrics.confusion_matrix(y_test, predict_p)
-    #
-    # print(cnf_matrix_l)
-    # print(cnf_matrix_p)
+    # confusion matrix
+    cnf_matrix_l = metrics.confusion_matrix(y_test, predict_l)
 
-    return predict_l, predict_p
+    # create heatmap
+    fig, ax = plt.subplots()
+    sns.heatmap(pd.DataFrame(cnf_matrix_l), annot=True, cmap="YlGnBu", fmt='g')
+    ax.xaxis.set_label_position("top")
+    plt.tight_layout()
+    plt.title('Confusion matrix', y=1.1)
+    plt.ylabel('Actual label')
+    plt.xlabel('Predicted label')
+    # plt.show()
+
+    return predict_l
 
 
 #def white_test(pred_l, pred_p):
@@ -115,7 +116,7 @@ def model_building(df):
 
 
 if __name__ == '__main__':
-    # data display settings
+    # terminal display settings
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)
     pd.set_option('display.width', 400)
@@ -133,5 +134,5 @@ if __name__ == '__main__':
     # encoding object variables
     dataset = encoding(dataset)
 
-    # logit and probit model building
+    # logit and probit model building and evaluation
     pred_l, pred_p = model_building(dataset)
