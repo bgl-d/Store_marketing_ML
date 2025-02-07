@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import OrdinalEncoder
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 import seaborn as sns
 import statsmodels.api as sm
 from sklearn import metrics
-from sklearn.metrics import classification_report
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
 def preprocessing(df):
@@ -76,43 +77,53 @@ def encoding(df):
     return df
 
 
-def model_building(df):
-    # train, test data split
-    x = df.drop(columns=['Response', 'Dt_Customer'])
+def logit_model(df):
+    # splitting data and dropping non-significant variables (p > 0.05)
+    x = df.drop(columns=['Response', 'Dt_Customer', 'Complain', 'NumWebPurchases', 'MntSweetProducts',
+                         'MntFruits', 'Kidhome', 'Marital_Status', 'MntFishProducts', 'Year_Birth',
+                         'Education', 'MntGoldProds', 'NumWebVisitsMonth', 'Income'])
     y = df[['Response']]
+
+    # train, test data split
     X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=0, train_size=.8)
 
     # logit model
     m_logit = sm.Logit(y_train, X_train).fit()
     predict_l = m_logit.predict(X_test)
-    predict_l = (predict_l[:] > 0.5).astype(int)
+    predictions = (predict_l[:] > 0.5).astype(int)
 
     # model's summary
     print(m_logit.summary())
-    # print(classification_report(y_test, predict_l))
+    print(metrics.classification_report(y_test, predictions, target_names=['reject', 'accept']))
 
     # confusion matrix
-    cnf_matrix_l = metrics.confusion_matrix(y_test, predict_l)
+    cnf_matrix = metrics.confusion_matrix(y_test, predictions)
 
-    # create heatmap
+    # confusion matrix heatmap
     fig, ax = plt.subplots()
-    sns.heatmap(pd.DataFrame(cnf_matrix_l), annot=True, cmap="YlGnBu", fmt='g')
+    sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu", fmt='g')
     ax.xaxis.set_label_position("top")
     plt.tight_layout()
     plt.title('Confusion matrix', y=1.1)
     plt.ylabel('Actual label')
     plt.xlabel('Predicted label')
-    # plt.show()
+
+    # ROC curve & AUC
+    fig1, ax1 = plt.subplots()
+    fpr, tpr, threshold = metrics.roc_curve(y_test, predictions)
+    auc = metrics.roc_auc_score(y_test, predictions)
+    ax1.plot(fpr, tpr, label="AUC=" + str(auc))
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.legend(loc=4)
+
+    # vif
+    vif_data = pd.DataFrame()
+    vif_data["feature"] = X_train.columns
+    vif_data["VIF"] = [variance_inflation_factor(X_train.values, i) for i in range(len(X_train.columns))]
+    print(vif_data)
 
     return predict_l
-
-
-#def white_test(pred_l, pred_p):
-    # White's test
-    # X_train['Const'] = 1
-    # white_test = d.het_breuschpagan(m_probit.resid_generalized, exog_het=X_train[['NumCatalogPurchases','Const']])
-    # labels = ['Test Statistic', 'Test Statistic p-value', 'F-Statistic', 'F-Test p-value']
-    # print(white_test)
 
 
 if __name__ == '__main__':
@@ -134,5 +145,5 @@ if __name__ == '__main__':
     # encoding object variables
     dataset = encoding(dataset)
 
-    # logit and probit model building and evaluation
-    pred_l, pred_p = model_building(dataset)
+    # logit model building and evaluation
+    prediction = logit_model(dataset)
