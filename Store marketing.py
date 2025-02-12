@@ -169,7 +169,7 @@ if __name__ == '__main__':
     x, y = reduction(dataset)
 
     # logit model building and evaluation
-    # logit_model(x, y)
+    logit_model(x, y)
 
     # Random Forest model
     random_forest(x, y)
