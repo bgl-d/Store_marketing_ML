@@ -31,8 +31,9 @@ This project is based on superstore's marketing campaign with data from Kaggle. 
 
 **6. Model Evaluation:** Evaluate models using metrics like AUC, confusion matrix, and classification reports.
 
+---
 
-### Code Implementation
+### Code Implementation:
 
 **1. Data Cleaning (cleaning):**
 
@@ -67,6 +68,8 @@ This project is based on superstore's marketing campaign with data from Kaggle. 
 * Split data into training and testing sets.
 * Fit a Random Forest classifier using scikit-learn.
 * Evaluate the model using a confusion matrix and AUC.**
+
+---
 
 ### Results
 
