@@ -1,14 +1,13 @@
-# Store-marketing
-**Store marketing campaign task from Kaggle***
+# Store marketing campaign
 
-This project is based on superstore's marketing campaign with data from Kaggle. It's aim is to showcase my data science skills by building model and predicting the likelihood of customers responding positively to a year-end sales campaign for a superstore.
+This project is based on superstore's marketing campaign with data from Kaggle[^1]. It's aim is to showcase my data science skills by building model and predicting the likelihood of customers responding positively to a year-end sales campaign for a superstore.
 
 ## Table of Contents
-- [Context](#context)
-- [Objective](#objective)
+- [Context & Objective](**context)
 - [Steps](#steps)
 - [Code Implementation](#code-implementation)
 - [Results](#results)
+- [References](#references)
 
 ---
 
@@ -66,25 +65,27 @@ This project is based on superstore's marketing campaign with data from Kaggle. 
 
 * Split data into training and testing sets.
 * Fit a logistic regression model using statsmodels.
-* Evaluate the model using a confusion matrix, ROC curve, and AUC.**
+* Evaluate the model using a confusion matrix, ROC curve, and AUC.*
 
 **6. Random Forest Model (random_forest):**
 
 * Split data into training and testing sets.
 * Fit a Random Forest classifier using scikit-learn.
-* Evaluate the model using a confusion matrix and AUC.**
+* Evaluate the model using a confusion matrix and AUC.*
 
 ---
 
 ### Results
 
+Key features:
 
 
 
+---
 
+### *Model evaluation:
 
+---
 
-### *Resources:
-https://www.kaggle.com/datasets/ahsan81/superstore-marketing-campaign-dataset
-
-### **Model evaluation:
+### References:
+[^1]: https://www.kaggle.com/datasets/ahsan81/superstore-marketing-campaign-dataset
