@@ -3,8 +3,6 @@
 
 This project is based on superstore's marketing campaign with data from Kaggle. It's aim is to showcase my data science skills by building model and predicting the likelihood of customers responding positively to a year-end sales campaign for a superstore.
 
----
-
 ## Table of Contents
 - [Context](#context)
 - [Objective](#objective)
@@ -89,4 +87,4 @@ This project is based on superstore's marketing campaign with data from Kaggle. 
 ### *Resources:
 https://www.kaggle.com/datasets/ahsan81/superstore-marketing-campaign-dataset
 
-## **Model evaluation:
+### **Model evaluation:
