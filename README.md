@@ -1,9 +1,16 @@
 # Store-marketing
 **Store marketing campaign task from Kaggle***
 
+This project is based on superstore's marketing campaign with data from Kaggle. It's aim is to showcase my data science skills by building model and predicting the likelihood of customers responding positively to a year-end sales campaign for a superstore.
 
+---
 
-This project is based on superstore's marketing campaign with data from Kaggle. Its objective is to showcase my skills in data science by building model and predicting the likelihood of customers responding positively to a year-end sale campaign for a superstore.
+## Table of Contents
+- [Context](#context)
+- [Objective](#objective)
+- [Steps](#steps)
+- [Code Implementation](#code-implementation)
+- [Results](#results)
 
 ---
 
