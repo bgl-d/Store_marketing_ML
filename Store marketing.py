@@ -115,7 +115,6 @@ def logit_model(x, y):
     vif_data = pd.DataFrame()
     vif_data["feature"] = X_train.columns
     vif_data["VIF"] = [variance_inflation_factor(X_train.values, i) for i in range(len(X_train.columns))]
-
     print(vif_data)
 
 
