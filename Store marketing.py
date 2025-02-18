@@ -10,32 +10,44 @@ import statsmodels.api as sm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+import plotly.express as px
 
 
 def cleaning(df):
-    # check for duplicates
-    print(df.duplicated().sum())
-
-    # null values
-    print(df.isnull().sum())
-    df['Income'] = df['Income'].fillna(df['Income'].median())
-
-    # plot boxplot charts
-    fig, ax = plt.subplots(ncols=5, nrows=4, figsize=(16, 15))
-    boxplots = df.drop(columns='Dt_Customer')
-    col = 0
-    for i in range(4):
-        for j in range(5):
-            sns.boxplot(boxplots[boxplots.columns[col]], ax=ax[i][j])
-            ax[i][j].set_title(boxplots.columns[col])
-            col = col + 1
-
-
-    df.drop(df[df['Income'] > 300000].index, inplace=True)
-
-    # sort by date
+    # Sort by enrollment date
     df['Dt_Customer'] = pd.to_datetime(df.Dt_Customer).dt.to_period('M')
     df.Dt_Customer.sort_values()
+
+    # Duplicates
+    print('Number of duplicates: ', df.duplicated().sum(), '\n')
+
+    # Missing values
+    print('Missing values: \n', df[df.isnull().any(axis=1)], '\n')
+    df['Income'] = df['Income'].fillna(df['Income'].median())
+    return df
+
+
+def eda(df):
+    df = df.drop(columns=['Id'])
+    print(df.describe(), '\n')
+
+    # Histograms
+    hist_df = df.drop(columns=['Dt_Customer'])
+    for i in hist_df.columns:
+          fig = px.histogram(hist_df, x=i, histnorm='percent')
+          fig.update_layout(xaxis_title=i, bargroupgap=0.1)
+          fig.show()
+
+    # Exclude extreme values
+    extreme_values = {'Variable': ['NumWebVisitsMonth', 'NumWebPurchases', 'NumDealsPurchases', 'Year_Birth',
+                                   'NumCatalogPurchases', 'MntSweetProducts', 'MntGoldProds', 'Income'],
+                      'Separating_point': [10, 15, 14, -1920, 15, 200, 250, 140000]}
+
+    for i in range(len(extreme_values['Variable'])):
+        if extreme_values['Separating_point'][i] > 0:
+            df = df.drop(df[df[extreme_values['Variable'][i]] > extreme_values['Separating_point'][i]].index)
+        else:
+            df = df.drop(df[df[extreme_values['Variable'][i]] < abs(extreme_values['Separating_point'][i])].index)
     return df
 
 
@@ -43,46 +55,45 @@ def transformation(df):
     # enrollment dates to int
     sorted_dt = sorted([str(val) for val in df.Dt_Customer.unique()])
     df['Dt_Customer'] = df.Dt_Customer.apply(lambda val: sorted_dt.index(str(val)))
-    df.drop('Id', axis=1, inplace=True)
 
     # ordinal encoding
     object_cols = df.select_dtypes(include=['object']).columns
     ordinal_encoder = OrdinalEncoder()
-    df[object_cols] = ordinal_encoder.fit_transform(dataset[object_cols])
+    df[object_cols] = ordinal_encoder.fit_transform(df[object_cols])
+
+    # correlation matrix
+    fig3, ax3 = plt.subplots(figsize=(16, 9))
+    corr_m = df.corr()
+    x_labels = corr_m.columns
+    sns.heatmap(corr_m, cmap="YlGnBu", annot=True, annot_kws={"size": 8}, ax=ax3)
+    ax3.set_xticklabels(x_labels, rotation=30, ha='right')
     return df
 
 
-def eda(df):
-    # correlation matrix
-    fig3, ax3 = plt.subplots(figsize=(16, 9))
-    x_labels = df.columns
-    corr_m = df.corr()
-    sns.heatmap(corr_m, cmap="YlGnBu", annot=True, annot_kws={"size": 8}, ax=ax3)
-    ax3.set_xticklabels(x_labels, rotation=30, ha='right')
-    print(df.describe())
-
-
 def reduction(df):
-    # scaling
-    X = df.drop(['Response', 'Year_Birth', 'Kidhome', 'MntFruits', 'MntSweetProducts',
-                 'MntFishProducts', 'MntGoldProds', 'Complain', 'Income', 'Marital_Status'], axis=1)  # drop features with p < 0.05
+    # Scaling
+    X = df.drop(columns='Response')
     y = df['Response']
     scaler = StandardScaler()
     X[X.columns] = scaler.fit_transform(X)
 
-    # samppling
+    # Sampling
     X_resampled, y_resampled = SMOTE().fit_resample(X, y)
     return X_resampled,y_resampled
 
 
 def logit_model(x, y):
+    # excluding features with p-value > 0.05 after model fitting
+    x = x.drop(columns=['NumWebPurchases', 'Year_Birth', 'Kidhome', 'MntFruits',
+                        'MntGoldProds', 'Complain', 'Marital_Status', 'MntSweetProducts'])
+
     X_train, X_test, y_train, y_test = train_test_split(x, y,
                                                         stratify=y, random_state=0, train_size=.8)
 
     # logit model
     m_logit = sm.Logit(y_train, X_train).fit()
     predict_l = m_logit.predict(X_test)
-    predictions = (predict_l[:] > 0.6).astype(int)
+    predictions = (predict_l[:] > 0.5).astype(int)
 
     # model's summary
     print(m_logit.summary())
@@ -140,10 +151,19 @@ def random_forest(x, y):
     plt.ylabel('True')
     plt.xlabel('Prediction')
     print(cnf_matrix)
+    plt.show()
 
     # AUC
     auc = metrics.roc_auc_score(y_test, y_pred)
     print(auc)
+
+    # features
+    feature_importance = pd.DataFrame({
+        'Feature': X_train.columns,
+        'Importance': rf.feature_importances_
+    }).sort_values(by='Importance', ascending=False)
+
+    print(feature_importance)
 
 
 if __name__ == '__main__':
@@ -157,16 +177,16 @@ if __name__ == '__main__':
     dataset = pd.read_csv('../Store marketing/superstore_data.csv')
 
     # filling missing data, removing outliers
-    dataset = cleaning(dataset)
-
-    # data transformation
-    dataset = transformation(dataset)
+    clean_dataset = cleaning(dataset)
 
     # exploratory data analysis
-    eda(dataset)
+    clean_dataset = eda(clean_dataset)
+
+    # data transformation
+    clean_dataset = transformation(clean_dataset)
 
     # data reduction
-    x, y = reduction(dataset)
+    x, y = reduction(clean_dataset)
 
     # logit model building and evaluation
     logit_model(x, y)
