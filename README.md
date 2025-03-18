@@ -1,11 +1,10 @@
 # Store marketing campaign
 
-This project is based on superstore's marketing campaign with data from Kaggle[^1]. It's aim is to showcase my data science skills by building model and predicting the likelihood of customers responding positively to a year-end sales campaign for a superstore.
+This project is based on superstore's marketing campaign with data from Kaggle[^1]. Its aim is to showcase my data analytics skills by building a predictive model to determine the likelihood of customers responding positively to a year-end sales campaign.
 
 ## Table of Contents
 - [Context & Objective](**context)
 - [Steps](#steps)
-- [Code Implementation](#code-implementation)
 - [Results](#results)
 - [References](#references)
 
@@ -19,66 +18,18 @@ This project is based on superstore's marketing campaign with data from Kaggle[^
 
 ### Steps:
 
-**1. Data cleaning:** Handle missing values, duplicates, and outliers.
+**1. Data preprocessing:** Handle missing values, duplicates and outliers, encode categorical variables and transform date features.
 
-**2. Data transforamtion:** Encode categorical variables and transform date features.
+**2. Data analysis on customer segments:** Establish customer segments, analyze customer behavior, total sales per customer by segment
 
-**3. Exploratory data analysis:** Analyze feature correlations and distributions.
+**3. A/B tests**
 
-**4. Data reduction:** Perform feature selection, scaling, and sampling to balance the dataset.
-
-**5. Model builidng:** 
-
- * Implement a Logistic Regression model.
-
- * Implement a Random Forest model.  
-
-**6. Model Evaluation:** Evaluate models using metrics like AUC, confusion matrix, and classification reports.
+**3. Model builidng:** Data reduction, implementation of a logistic regression and random forest model, model evaluation
 
 ---
 
-### Code Implementation:
-
-**1. Data Cleaning (cleaning):**
-
-* Check for duplicates and missing values.
-* Handle missing values by imputing the median for the Income column.
-* Visualize outliers using boxplots.
-
-**2. Data Transformation (transformation):**
-
-* Convert enrollment dates to integer values.
-* Perform ordinal encoding for categorical variables.
-
-**3. Exploratory Data Analysis (eda):**
-
-* Generate a correlation matrix to understand feature relationships.
-* Visualize correlations using a heatmap.
-
-**4. Data Reduction (reduction):**
-
-* Drop less significant features based on p-values.
-* Scale features using StandardScaler.
-* Balance the dataset using SMOTE (Synthetic Minority Over-sampling Technique).
-
-**5. Logistic Regression Model (logit_model):**
-
-* Split data into training and testing sets.
-* Fit a logistic regression model using statsmodels.
-* Evaluate the model using a confusion matrix, ROC curve, and AUC.*
-
-**6. Random Forest Model (random_forest):**
-
-* Split data into training and testing sets.
-* Fit a Random Forest classifier using scikit-learn.
-* Evaluate the model using a confusion matrix and AUC.*
-
----
 
 ### Results
-
-Key features:
-
 
 
 ---
