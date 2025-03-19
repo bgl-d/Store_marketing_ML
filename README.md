@@ -88,14 +88,20 @@ Key features:
 
 **Logistic Regression Model**
 Confusion matrix:
+
 ![alt text](https://github.com/bgl-d/Store_marketing_ML/blob/main/Charts/Logit_cnf_matrix.png)
 
+
 ROC, AUC score:
+
 ![alt text](https://github.com/bgl-d/Store_marketing_ML/blob/main/Charts/AUC_logit_model.png)
+
 
 **Random Forest Model**
 Random forest confusion matrix:
+
 ![alt text](https://github.com/bgl-d/Store_marketing_ML/blob/main/Charts/Random_Forest_cnf_matrix.png)
+
 AUC = 0.9468085106382979
 
 ---
