@@ -41,11 +41,11 @@ def cleaning(df):
     df = df.drop(columns=['Year_Birth'])
 
     # Spending groups
-    df['Total_Spendings'] = (df['MntWines'] + df['MntFruits'] + df['MntMeatProducts'] + df['MntFishProducts'] +
-                             df['MntSweetProducts'] + df['MntGoldProds'])
+    df['Total_Spending'] = (df['MntWines'] + df['MntFruits'] + df['MntMeatProducts'] + df['MntFishProducts'] +
+                            df['MntSweetProducts'] + df['MntGoldProds'])
     bins = [0, 250, 500, 1000, 1500, 2000, 3000]
     labels = ['<250', '250–500', '500–1000', '1000–1500', '1500–2000', '2000+']
-    df['SpendingGroup'] = pd.cut(df['Total_Spendings'], bins=bins, labels=labels, right=False)
+    df['SpendingGroup'] = pd.cut(df['Total_Spending'], bins=bins, labels=labels, right=False)
     return df
 
 
@@ -107,7 +107,7 @@ def data_analysis_on_customer_segments(df):
     ax2.legend(["Negative", "Positive"], title="Response")
 
     # Customers by spendings
-    spending_per_age_group = df.groupby('AgeGroup', observed=True)['Total_Spendings'].mean().to_frame().T
+    spending_per_age_group = df.groupby('AgeGroup', observed=True)['Total_Spending'].mean().to_frame().T
     fig5, ax5 = plt.subplots(figsize=(16, 9))
     spending_per_age_group.plot(kind='bar', rot=0, ax=ax5)
     ax5.set_ylabel("Mean Value")
