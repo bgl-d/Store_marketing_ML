@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import datetime as DT
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import OrdinalEncoder
@@ -11,8 +10,6 @@ from sklearn.svm import SVR
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-
 import plotly.express as px
 
 
@@ -150,8 +147,45 @@ def support_vector_reg(X, y):
     svr = SVR(kernel = 'rbf')
     svr.fit(X_train, y_train)
     y_pred = svr.predict(X_test)
-    y_pred_binary = (y_pred >= 0.5).astype(int)
-    print(metrics.classification_report(y_test, y_pred_binary, target_names=['reject', 'accept']))
+    y_pred = (y_pred >= 0.5).astype(int)
+    print(metrics.classification_report(y_test, y_pred, target_names=['reject', 'accept']))
+
+    # confusion matrix
+    fig, ax = plt.subplots()
+    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+    sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap='YlGnBu', fmt='g')
+    ax.xaxis.set_label_position('top')
+    plt.tight_layout()
+    plt.title('Confusion matrix', y=1.1)
+    plt.ylabel('True')
+    plt.xlabel('Prediction')
+    print(cnf_matrix)
+    # plt.show()
+
+    # AUC
+    auc = metrics.roc_auc_score(y_test, y_pred)
+    print('AUC = ', auc)
+
+
+def k_neighdbors(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(x, y,
+                                                        stratify=y, random_state=0, train_size=.8)
+    knn = KNeighborsClassifier(n_neighbors=3)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+    print(metrics.classification_report(y_test, y_pred, target_names=['reject', 'accept']))
+
+    # confusion matrix
+    fig, ax = plt.subplots()
+    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+    sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap='YlGnBu', fmt='g')
+    ax.xaxis.set_label_position('top')
+    plt.tight_layout()
+    plt.title('Confusion matrix', y=1.1)
+    plt.ylabel('True')
+    plt.xlabel('Prediction')
+    print(cnf_matrix)
+    # plt.show()
 
     # AUC
     auc = metrics.roc_auc_score(y_test, y_pred)
@@ -214,6 +248,9 @@ if __name__ == '__main__':
 
     # support vector regression
     support_vector_reg(x, y)
+
+    # K-Nearest Neighbors
+    k_neighdbors(x, y)
 
     # Random Forest model
     random_forest(x, y)
