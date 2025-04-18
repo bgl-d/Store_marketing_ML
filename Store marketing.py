@@ -1,15 +1,18 @@
 import numpy as np
 import pandas as pd
+import datetime as DT
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
-import statsmodels.api as sm
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVR
 from sklearn import metrics
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+
 import plotly.express as px
 
 
@@ -24,24 +27,42 @@ def cleaning(df):
     # Missing values
     print('Missing values: \n', df[df.isnull().any(axis=1)], '\n')
     df['Income'] = df['Income'].fillna(df['Income'].median())
+
+    # Marital status values fix
+    df.drop(df.loc[df['Marital_Status'] == 'YOLO'].index, inplace=True)
+    df.drop(df.loc[df['Marital_Status'] == 'Absurd'].index, inplace=True)
+    df.drop(df.loc[df['Marital_Status'] == 'Alone'].index, inplace=True)
+
+    # Age and age groups instead of birth year
+    df['Age'] = 2025 - df['Year_Birth']
+    bins = [0, 25, 35, 45, 55, 65, 130]
+    labels = ['<25', '25–34', '35–44', '45–54', '55–64', '65+']
+    df['AgeGroup'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
+    df = df.drop(columns=['Year_Birth'])
+
+    # Spending groups
+    df['Total_Spendings'] = (df['MntWines'] + df['MntFruits'] + df['MntMeatProducts'] + df['MntFishProducts'] +
+                             df['MntSweetProducts'] + df['MntGoldProds'])
+    bins = [0, 250, 500, 1000, 1500, 2000, 3000]
+    labels = ['<250', '250–500', '500–1000', '1000–1500', '1500–2000', '2000+']
+    df['SpendingGroup'] = pd.cut(df['Total_Spendings'], bins=bins, labels=labels, right=False)
     return df
 
 
 def eda(df):
-    df = df.drop(columns=['Id'])
-    print(df.describe(), '\n')
+    # EDA
+    print(df.describe())
 
-    # Histograms
-    hist_df = df.drop(columns=['Dt_Customer'])
-    for i in hist_df.columns:
-          fig = px.histogram(hist_df, x=i, histnorm='percent')
+    # Extreme values
+    for i in df.columns:
+          fig = px.histogram(df, x=i, histnorm='percent')
           fig.update_layout(xaxis_title=i, bargroupgap=0.1)
-          fig.show()
+          # fig.show()
 
     # Exclude extreme values
-    extreme_values = {'Variable': ['NumWebVisitsMonth', 'NumWebPurchases', 'NumDealsPurchases', 'Year_Birth',
+    extreme_values = {'Variable': ['NumWebVisitsMonth', 'NumWebPurchases', 'NumDealsPurchases', 'Age',
                                    'NumCatalogPurchases', 'MntSweetProducts', 'MntGoldProds', 'Income'],
-                      'Separating_point': [10, 15, 14, -1920, 15, 200, 250, 140000]}
+                      'Separating_point': [10, 15, 14, 100, 15, 200, 250, 140000]}
 
     for i in range(len(extreme_values['Variable'])):
         if extreme_values['Separating_point'][i] > 0:
@@ -51,13 +72,54 @@ def eda(df):
     return df
 
 
+def data_analysis_on_customer_segments(df):
+    # Customer profile
+    dimensions = ['Kidhome', 'Teenhome', 'Education', 'Marital_Status', 'Complain', 'AgeGroup', 'SpendingGroup']
+    for i in dimensions:
+        df.groupby('Response')[i].value_counts().unstack().T.plot(kind='bar', rot=0)
+        plt.xlabel("Parameter")
+        plt.ylabel("Count")
+        plt.title(i)
+        plt.legend(["Negative", "Positive"], title="Response")
+
+    # Average deals through different channels
+    channels = ['NumDealsPurchases', 'NumWebPurchases', 'NumCatalogPurchases', 'NumStorePurchases', 'NumWebVisitsMonth']
+    fig0, ax0 = plt.subplots(figsize=(16, 9))
+    df.groupby('Response')[channels].mean().T.plot(kind='bar', rot=0, ax=ax0)
+    ax0.set_ylabel("Mean Value")
+    ax0.set_title('Channels')
+    ax0.legend(["Negative", "Positive"], title="Response")
+
+    # Mean income within different response
+    income_means = df.groupby('Response')['Income'].mean().to_frame().T
+    fig1, ax1 = plt.subplots(figsize=(16, 9))
+    income_means.plot(kind='bar', rot=0, ax=ax1)
+    ax1.set_ylabel("Mean Value")
+    ax1.set_title("Income")
+    ax1.legend(["Negative", "Positive"], title="Response")
+
+    # Mean shopping recency within different response
+    mean_recency = df.groupby('Response')['Recency'].mean().to_frame().T
+    fig2, ax2 = plt.subplots(figsize=(16, 9))
+    mean_recency.plot(kind='bar', rot=0, ax=ax2)
+    ax2.set_ylabel("Mean Value")
+    ax2.set_title('Recency')
+    ax2.legend(["Negative", "Positive"], title="Response")
+
+    # Customers by spendings
+    spending_per_age_group = df.groupby('AgeGroup', observed=True)['Total_Spendings'].mean().to_frame().T
+    fig5, ax5 = plt.subplots(figsize=(16, 9))
+    spending_per_age_group.plot(kind='bar', rot=0, ax=ax5)
+    ax5.set_ylabel("Mean Value")
+
+
 def transformation(df):
     # enrollment dates to int
     sorted_dt = sorted([str(val) for val in df.Dt_Customer.unique()])
     df['Dt_Customer'] = df.Dt_Customer.apply(lambda val: sorted_dt.index(str(val)))
 
     # ordinal encoding
-    object_cols = df.select_dtypes(include=['object']).columns
+    object_cols = df.select_dtypes(include=['object', 'category']).columns
     ordinal_encoder = OrdinalEncoder()
     df[object_cols] = ordinal_encoder.fit_transform(df[object_cols])
 
@@ -79,54 +141,21 @@ def reduction(df):
 
     # Sampling
     X_resampled, y_resampled = SMOTE().fit_resample(X, y)
-    return X_resampled,y_resampled
+    return X_resampled, y_resampled
 
 
-def logit_model(x, y):
-    # excluding features with p-value > 0.05 after model fitting
-    x = x.drop(columns=['NumWebPurchases', 'Year_Birth', 'Kidhome', 'MntFruits',
-                        'MntGoldProds', 'Complain', 'Marital_Status', 'MntSweetProducts'])
-
+def support_vector_reg(X, y):
     X_train, X_test, y_train, y_test = train_test_split(x, y,
                                                         stratify=y, random_state=0, train_size=.8)
+    svr = SVR(kernel = 'rbf')
+    svr.fit(X_train, y_train)
+    y_pred = svr.predict(X_test)
+    y_pred_binary = (y_pred >= 0.5).astype(int)
+    print(metrics.classification_report(y_test, y_pred_binary, target_names=['reject', 'accept']))
 
-    # logit model
-    m_logit = sm.Logit(y_train, X_train).fit()
-    predict_l = m_logit.predict(X_test)
-    predictions = (predict_l[:] > 0.5).astype(int)
-
-    # model's summary
-    print(m_logit.summary())
-    print(metrics.classification_report(y_test, predictions, target_names=['reject', 'accept']))
-
-    # confusion matrix
-    cnf_matrix = metrics.confusion_matrix(y_test, predictions)
-
-    # confusion matrix heatmap
-    fig, ax = plt.subplots()
-    sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu", fmt='g')
-    ax.xaxis.set_label_position("top")
-    plt.tight_layout()
-    plt.title('Confusion matrix', y=1.1)
-    plt.ylabel('Actual label')
-    plt.xlabel('Predicted label')
-    fig.tight_layout()
-
-    # ROC curve & AUC
-    fig1, ax1 = plt.subplots()
-    fpr, tpr, threshold = metrics.roc_curve(y_test, predictions)
-    auc = metrics.roc_auc_score(y_test, predictions)
-    ax1.plot(fpr, tpr, label="AUC=" + str(auc))
-    plt.ylabel('True Positive Rate')
-    plt.xlabel('False Positive Rate')
-    plt.legend(loc=4)
-    print(auc)
-
-    # vif
-    vif_data = pd.DataFrame()
-    vif_data["feature"] = X_train.columns
-    vif_data["VIF"] = [variance_inflation_factor(X_train.values, i) for i in range(len(X_train.columns))]
-    print(vif_data)
+    # AUC
+    auc = metrics.roc_auc_score(y_test, y_pred)
+    print('AUC = ', auc)
 
 
 def random_forest(x, y):
@@ -151,19 +180,11 @@ def random_forest(x, y):
     plt.ylabel('True')
     plt.xlabel('Prediction')
     print(cnf_matrix)
-    plt.show()
+    # plt.show()
 
     # AUC
     auc = metrics.roc_auc_score(y_test, y_pred)
-    print(auc)
-
-    # features
-    feature_importance = pd.DataFrame({
-        'Feature': X_train.columns,
-        'Importance': rf.feature_importances_
-    }).sort_values(by='Importance', ascending=False)
-
-    print(feature_importance)
+    print('AUC = ', auc)
 
 
 if __name__ == '__main__':
@@ -182,14 +203,17 @@ if __name__ == '__main__':
     # exploratory data analysis
     clean_dataset = eda(clean_dataset)
 
+    # specific customer segments analysis
+    data_analysis_on_customer_segments(clean_dataset)
+
     # data transformation
     clean_dataset = transformation(clean_dataset)
 
     # data reduction
     x, y = reduction(clean_dataset)
 
-    # logit model building and evaluation
-    logit_model(x, y)
+    # support vector regression
+    support_vector_reg(x, y)
 
     # Random Forest model
     random_forest(x, y)
